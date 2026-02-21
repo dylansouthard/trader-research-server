@@ -61,6 +61,7 @@ function main() {
     const { loadConfig } = require("../src/config");
     const cfg = loadConfig({ loadFeeds: false });
     out.checks.push(result("loadConfig", true, JSON.stringify({
+      host: cfg.host,
       port: cfg.port,
       dbPath: cfg.dbPath,
       logFile: cfg.logFile,

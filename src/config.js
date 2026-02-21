@@ -66,9 +66,11 @@ function loadConfig(options = {}) {
   const fileMaxConcurrency = fileCfg.max_concurrency ?? fileCfg.MAX_CONCURRENCY;
   const fileLogLevel = fileCfg.log_level ?? fileCfg.LOG_LEVEL;
   const fileLogFile = fileCfg.log_file ?? fileCfg.LOG_FILE ?? fileCfg.ingest_log_path ?? fileCfg.INGEST_LOG_PATH;
+  const fileHost = fileCfg.host ?? fileCfg.HOST;
 
   const cfg = {
     port: clampInt(process.env.PORT || filePort || 8787, 1, 65535),
+    host: String(process.env.IP || process.env.HOST || fileHost || "0.0.0.0").trim(),
     dbPath: resolvePath(process.env.DB_PATH || fileDbPath || "./storage/research.sqlite"),
     feedsPath: process.env.FEEDS_PATH || fileFeedsPath || "./feeds.json",
     userAgent: String(process.env.USER_AGENT || fileUserAgent || "ResearchServer/0.1 (contact: you@example.com)").trim(),

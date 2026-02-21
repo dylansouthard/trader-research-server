@@ -11,6 +11,7 @@ function startServer(options = {}) {
 
   const cfg = loadConfig({ loadFeeds: false });
   bootLog("server.config.loaded");
+  bootLog(`server.config.bind host=${cfg.host} port=${cfg.port}`);
   const logger = createLogger(cfg);
   logger.info("server_boot", { phase: "config_loaded" });
   const db = createDb(cfg.dbPath);
@@ -40,15 +41,16 @@ function startServer(options = {}) {
     res.status(500).json({ ok: false, error: "internal_error" });
   });
 
-  const server = app.listen(cfg.port, () => {
-    console.log(`[research-server] listening on :${cfg.port}`);
+  const server = app.listen(cfg.port, cfg.host, () => {
+    console.log(`[research-server] listening on ${cfg.host}:${cfg.port}`);
     console.log(`[research-server] db: ${cfg.dbPath}`);
     console.log(`[research-server] log file: ${cfg.logFile}`);
     logger.info("server_started", {
+      host: cfg.host,
       port: cfg.port,
       db_path: cfg.dbPath
     });
-    bootLog(`server.listen.ok port=${cfg.port}`);
+    bootLog(`server.listen.ok host=${cfg.host} port=${cfg.port}`);
   });
   server.on("error", (err) => {
     logger.error("server_listen_error", { error: err?.stack || err?.message || String(err) });
