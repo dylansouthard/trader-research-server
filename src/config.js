@@ -51,7 +51,10 @@ function resolvePath(p) {
   return path.isAbsolute(p) ? p : path.resolve(PROJECT_ROOT, p);
 }
 
-function loadConfig() {
+function loadConfig(options = {}) {
+  const requireUserAgent = Boolean(options.requireUserAgent);
+  const loadFeeds = options.loadFeeds !== false;
+
   loadEnv();
   const fileCfg = loadFileConfig("./config.json");
   const filePort = fileCfg.port ?? fileCfg.PORT;
@@ -76,11 +79,11 @@ function loadConfig() {
     logFile: resolvePath(process.env.LOG_FILE || fileLogFile || "./logs/ingest.log")
   };
 
-  if (!cfg.userAgent || !cfg.userAgent.includes("contact:")) {
+  if (requireUserAgent && (!cfg.userAgent || !cfg.userAgent.includes("contact:"))) {
     throw new Error("USER_AGENT must be descriptive and include contact info, e.g. '(contact: you@example.com)'");
   }
 
-  cfg.feeds = loadFeedsFile(cfg.feedsPath);
+  cfg.feeds = loadFeeds ? loadFeedsFile(cfg.feedsPath) : [];
   return cfg;
 }
 

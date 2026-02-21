@@ -54,7 +54,7 @@ function newestFirst(items) {
 }
 
 async function runIngest() {
-  const cfg = loadConfig();
+  const cfg = loadConfig({ requireUserAgent: true, loadFeeds: true });
   const logger = createLogger(cfg);
   const db = createDb(cfg.dbPath);
 
