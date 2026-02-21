@@ -79,6 +79,14 @@ node src/server.js
 
 Default port: `8787`.
 
+If you are debugging hosting issues (503, no output), run:
+
+```bash
+node scripts/doctor.js
+```
+
+It checks module installs, config loading, and file write permissions.
+
 ## API
 
 All responses are JSON:
@@ -123,3 +131,6 @@ Insert mode: `INSERT OR IGNORE`.
 - v0 stores feed snippet/summary only (no full article extraction).
 - Feed failures are isolated: one bad feed does not crash the run.
 - Logging is append-only to a single configured file (`log_file`).
+- Startup diagnostics are written to stderr and startup log files:
+  - `./logs/startup.log`
+  - `/tmp/research-server-startup.log` (fallback)

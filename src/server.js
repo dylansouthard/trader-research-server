@@ -7,6 +7,7 @@ const { createLogger } = require("./logger");
 function startServer(options = {}) {
   const bootLog = typeof options.bootLog === "function" ? options.bootLog : () => {};
   bootLog("server.start.begin");
+  bootLog(`server.env cwd=${process.cwd()} node=${process.version} pid=${process.pid}`);
 
   const cfg = loadConfig({ loadFeeds: false });
   bootLog("server.config.loaded");
