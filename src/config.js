@@ -4,13 +4,14 @@ const dotenv = require("dotenv");
 const { clampInt } = require("./util");
 
 const ALLOWED_FEED_TYPES = new Set(["news", "macro", "filing", "energy", "global"]);
+const PROJECT_ROOT = path.resolve(__dirname, "..");
 
 function loadEnv() {
-  dotenv.config({ path: path.resolve(process.cwd(), ".env"), override: false });
+  dotenv.config({ path: path.resolve(PROJECT_ROOT, ".env"), override: false });
 }
 
 function loadFileConfig(configPath) {
-  const fullPath = path.resolve(process.cwd(), configPath);
+  const fullPath = path.resolve(PROJECT_ROOT, configPath);
   if (!fs.existsSync(fullPath)) return {};
   try {
     const raw = JSON.parse(fs.readFileSync(fullPath, "utf-8"));
@@ -21,7 +22,7 @@ function loadFileConfig(configPath) {
 }
 
 function loadFeedsFile(feedsPath) {
-  const fullPath = path.resolve(process.cwd(), feedsPath);
+  const fullPath = path.resolve(PROJECT_ROOT, feedsPath);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`feeds file not found: ${fullPath}`);
   }
@@ -47,7 +48,7 @@ function loadFeedsFile(feedsPath) {
 
 function resolvePath(p) {
   if (!p) return p;
-  return path.isAbsolute(p) ? p : path.resolve(process.cwd(), p);
+  return path.isAbsolute(p) ? p : path.resolve(PROJECT_ROOT, p);
 }
 
 function loadConfig() {
