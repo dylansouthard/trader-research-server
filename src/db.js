@@ -1,33 +1,62 @@
 const path = require("path");
+const sqlite3 = require("sqlite3");
 const { ensureDir } = require("./util");
 
-function loadDatabaseModule() {
-  // Some shared-host Node wrappers inject global module paths first.
-  // Force project-local module resolution.
-  const localModulePath = path.resolve(__dirname, "..", "node_modules", "better-sqlite3");
-  try {
-    return require(localModulePath);
-  } catch (e) {
-    const allowGlobal = String(process.env.ALLOW_GLOBAL_BETTER_SQLITE3 || "").toLowerCase() === "true";
-    if (allowGlobal) {
-      return require("better-sqlite3");
-    }
-    throw new Error(
-      `Failed to load local better-sqlite3 at ${localModulePath}. ` +
-      `Set ALLOW_GLOBAL_BETTER_SQLITE3=true to permit global fallback. ` +
-      `Original error: ${e?.stack || e?.message || String(e)}`
-    );
-  }
+function openDatabase(dbPath) {
+  return new Promise((resolve, reject) => {
+    const db = new sqlite3.Database(dbPath, (err) => {
+      if (err) reject(err);
+      else resolve(db);
+    });
+  });
 }
 
-function createDb(dbPath) {
-  const Database = loadDatabaseModule();
-  ensureDir(path.dirname(dbPath));
-  const db = new Database(dbPath);
-  db.pragma("journal_mode = WAL");
-  db.pragma("synchronous = NORMAL");
+function run(db, sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function onRun(err) {
+      if (err) reject(err);
+      else resolve(this);
+    });
+  });
+}
 
-  db.exec(`
+function all(db, sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows || []);
+    });
+  });
+}
+
+function exec(db, sql) {
+  return new Promise((resolve, reject) => {
+    db.exec(sql, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+function closeDb(db) {
+  return new Promise((resolve, reject) => {
+    db.close((err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+async function createDb(dbPath) {
+  ensureDir(path.dirname(dbPath));
+  const db = await openDatabase(dbPath);
+
+  await run(db, "PRAGMA journal_mode = WAL");
+  await run(db, "PRAGMA synchronous = NORMAL");
+
+  await exec(
+    db,
+    `
     CREATE TABLE IF NOT EXISTS docs (
       id TEXT PRIMARY KEY,
       source TEXT NOT NULL,
@@ -44,63 +73,97 @@ function createDb(dbPath) {
     CREATE INDEX IF NOT EXISTS idx_docs_published ON docs(published_utc DESC);
     CREATE INDEX IF NOT EXISTS idx_docs_source ON docs(source);
     CREATE INDEX IF NOT EXISTS idx_docs_url ON docs(url);
-  `);
+  `
+  );
 
-  const insertStmt = db.prepare(`
-    INSERT OR IGNORE INTO docs (
-      id, source, feed_type, title, url, published_utc, summary, content, fetched_utc, raw_json
-    ) VALUES (
-      @id, @source, @feed_type, @title, @url, @published_utc, @summary, @content, @fetched_utc, @raw_json
-    )
-  `);
+  async function insertDoc(doc) {
+    const result = await run(
+      db,
+      `
+      INSERT OR IGNORE INTO docs (
+        id, source, feed_type, title, url, published_utc, summary, content, fetched_utc, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        doc.id,
+        doc.source,
+        doc.feed_type,
+        doc.title,
+        doc.url,
+        doc.published_utc,
+        doc.summary,
+        doc.content,
+        doc.fetched_utc,
+        doc.raw_json
+      ]
+    );
+    return Number(result?.changes || 0) > 0;
+  }
 
-  const latestStmt = db.prepare(`
-    SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
-    FROM docs
-    ORDER BY published_utc DESC
-    LIMIT ?
-  `);
+  async function listLatest(limit) {
+    return all(
+      db,
+      `
+      SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
+      FROM docs
+      ORDER BY published_utc DESC
+      LIMIT ?
+      `,
+      [limit]
+    );
+  }
 
-  const sinceStmt = db.prepare(`
-    SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
-    FROM docs
-    WHERE published_utc > ?
-    ORDER BY published_utc DESC
-    LIMIT ?
-  `);
+  async function listSince(sinceIso, limit) {
+    return all(
+      db,
+      `
+      SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
+      FROM docs
+      WHERE published_utc > ?
+      ORDER BY published_utc DESC
+      LIMIT ?
+      `,
+      [sinceIso, limit]
+    );
+  }
 
-  const sourceStmt = db.prepare(`
-    SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
-    FROM docs
-    WHERE source = ?
-    ORDER BY published_utc DESC
-    LIMIT ?
-  `);
+  async function listBySource(source, limit) {
+    return all(
+      db,
+      `
+      SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
+      FROM docs
+      WHERE source = ?
+      ORDER BY published_utc DESC
+      LIMIT ?
+      `,
+      [source, limit]
+    );
+  }
 
-  const searchStmt = db.prepare(`
-    SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
-    FROM docs
-    WHERE title LIKE ? OR summary LIKE ?
-    ORDER BY published_utc DESC
-    LIMIT ?
-  `);
-
-  function insertDoc(doc) {
-    const info = insertStmt.run(doc);
-    return info.changes > 0;
+  async function search(query, limit) {
+    const q = `%${query}%`;
+    return all(
+      db,
+      `
+      SELECT id, source, feed_type, title, url, published_utc, summary, content, fetched_utc
+      FROM docs
+      WHERE title LIKE ? OR summary LIKE ?
+      ORDER BY published_utc DESC
+      LIMIT ?
+      `,
+      [q, q, limit]
+    );
   }
 
   return {
     raw: db,
-    close: () => db.close(),
+    close: () => closeDb(db),
     insertDoc,
-    listLatest: (limit) => latestStmt.all(limit),
-    listSince: (sinceIso, limit) => sinceStmt.all(sinceIso, limit),
-    listBySource: (source, limit) => sourceStmt.all(source, limit),
-    search: (query, limit) => {
-      const q = `%${query}%`;
-      return searchStmt.all(q, q, limit);
-    }
+    listLatest,
+    listSince,
+    listBySource,
+    search
   };
 }
 

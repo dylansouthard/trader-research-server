@@ -56,7 +56,7 @@ function newestFirst(items) {
 async function runIngest() {
   const cfg = loadConfig({ requireUserAgent: true, loadFeeds: true });
   const logger = createLogger(cfg);
-  const db = createDb(cfg.dbPath);
+  const db = await createDb(cfg.dbPath);
 
   const summary = {
     started_utc: new Date().toISOString(),
@@ -93,7 +93,7 @@ async function runIngest() {
             summary.items_skipped += 1;
             continue;
           }
-          const inserted = db.insertDoc(doc);
+          const inserted = await db.insertDoc(doc);
           if (inserted) {
             feedStat.inserted += 1;
             summary.items_inserted += 1;
@@ -126,7 +126,7 @@ async function runIngest() {
       else summary.feeds_failed += 1;
     }
   } finally {
-    db.close();
+    await db.close();
   }
 
   summary.finished_utc = new Date().toISOString();

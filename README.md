@@ -13,7 +13,7 @@ Node.js market research ingestion server.
 
 - Node 20+
 - express
-- better-sqlite3
+- sqlite3
 - rss-parser
 - built-in fetch
 - dotenv

@@ -36,7 +36,10 @@ bootLog(`bootstrap.env PORT=${process.env.PORT || ""} NODE_ENV=${process.env.NOD
 try {
   const { startServer } = require("./src/server");
   bootLog("bootstrap.require_ok src/server");
-  startServer({ bootLog });
+  Promise.resolve(startServer({ bootLog })).catch((err) => {
+    bootLog(`bootstrap.fatal error=${err?.stack || err?.message || String(err)}`);
+    process.exit(1);
+  });
 } catch (err) {
   bootLog(`bootstrap.fatal error=${err?.stack || err?.message || String(err)}`);
   throw err;

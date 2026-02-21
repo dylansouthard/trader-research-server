@@ -4,7 +4,7 @@ const { createDb } = require("./db");
 const { buildRouter } = require("./routes");
 const { createLogger } = require("./logger");
 
-function startServer(options = {}) {
+async function startServer(options = {}) {
   const bootLog = typeof options.bootLog === "function" ? options.bootLog : () => {};
   bootLog("server.start.begin");
   bootLog(`server.env cwd=${process.cwd()} node=${process.version} pid=${process.pid}`);
@@ -14,7 +14,7 @@ function startServer(options = {}) {
   bootLog(`server.config.bind host=${cfg.host} port=${cfg.port}`);
   const logger = createLogger(cfg);
   logger.info("server_boot", { phase: "config_loaded" });
-  const db = createDb(cfg.dbPath);
+  const db = await createDb(cfg.dbPath);
   logger.info("server_boot", { phase: "db_ready", db_path: cfg.dbPath });
 
   const app = express();
@@ -59,8 +59,8 @@ function startServer(options = {}) {
 
   function shutdown() {
     logger.info("server_shutdown_requested");
-    server.close(() => {
-      db.close();
+    server.close(async () => {
+      await db.close();
       logger.info("server_stopped");
       process.exit(0);
     });
@@ -79,7 +79,10 @@ function startServer(options = {}) {
 }
 
 if (require.main === module) {
-  startServer();
+  startServer().catch((err) => {
+    console.error(err?.stack || err?.message || String(err));
+    process.exit(1);
+  });
 }
 
 module.exports = {

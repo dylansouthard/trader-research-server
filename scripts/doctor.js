@@ -55,7 +55,7 @@ function main() {
   out.checks.push(safeRequire("express"));
   out.checks.push(safeRequire("rss-parser"));
   out.checks.push(safeRequire("dotenv"));
-  out.checks.push(safeRequire("better-sqlite3"));
+  out.checks.push(safeRequire("sqlite3"));
 
   try {
     const { loadConfig } = require("../src/config");
