@@ -3,12 +3,20 @@ const { ensureDir } = require("./util");
 
 function loadDatabaseModule() {
   // Some shared-host Node wrappers inject global module paths first.
-  // Force project-local module resolution before falling back.
+  // Force project-local module resolution.
   const localModulePath = path.resolve(__dirname, "..", "node_modules", "better-sqlite3");
   try {
     return require(localModulePath);
-  } catch {
-    return require("better-sqlite3");
+  } catch (e) {
+    const allowGlobal = String(process.env.ALLOW_GLOBAL_BETTER_SQLITE3 || "").toLowerCase() === "true";
+    if (allowGlobal) {
+      return require("better-sqlite3");
+    }
+    throw new Error(
+      `Failed to load local better-sqlite3 at ${localModulePath}. ` +
+      `Set ALLOW_GLOBAL_BETTER_SQLITE3=true to permit global fallback. ` +
+      `Original error: ${e?.stack || e?.message || String(e)}`
+    );
   }
 }
 
