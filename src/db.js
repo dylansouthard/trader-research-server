@@ -1,8 +1,19 @@
 const path = require("path");
-const Database = require("better-sqlite3");
 const { ensureDir } = require("./util");
 
+function loadDatabaseModule() {
+  // Some shared-host Node wrappers inject global module paths first.
+  // Force project-local module resolution before falling back.
+  const localModulePath = path.resolve(__dirname, "..", "node_modules", "better-sqlite3");
+  try {
+    return require(localModulePath);
+  } catch {
+    return require("better-sqlite3");
+  }
+}
+
 function createDb(dbPath) {
+  const Database = loadDatabaseModule();
   ensureDir(path.dirname(dbPath));
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
