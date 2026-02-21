@@ -6,6 +6,9 @@
   "request_timeout_ms": 15000,
   "max_items_per_feed": 50,
   "max_concurrency": 4,
+  "scheduler_enabled": true,
+  "scheduler_interval_minutes": 15,
+  "scheduler_run_on_start": true,
   "log_level": "info",
   "log_file": "./logs/ingest.log"
 }

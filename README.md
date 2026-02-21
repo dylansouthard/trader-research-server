@@ -7,7 +7,7 @@ Node.js market research ingestion server.
 - Ingests RSS/Atom feed items into a local SQLite database.
 - Deduplicates items deterministically.
 - Exposes a read-only HTTP API for latest/since/source/search queries.
-- Designed to run ingestion on cron (no LLM on server).
+- Supports either system cron or built-in interval scheduler (no LLM on server).
 
 ## Tech
 
@@ -63,6 +63,12 @@ SEC endpoints may reject or rate-limit generic/blank user agents.
 Set runtime options in `config.json` (including `log_file`).  
 Environment variables override file values.
 
+Built-in scheduler config (in `config.json` or env):
+
+- `scheduler_enabled` (default `false`)
+- `scheduler_interval_minutes` (default `15`)
+- `scheduler_run_on_start` (default `true`)
+
 ## Run Ingestion
 
 ```bash
@@ -78,6 +84,8 @@ node src/server.js
 ```
 
 Default port: `8787`.
+
+If scheduler is enabled, server will run ingest on interval and write scheduler events to `log_file`.
 
 If you are debugging hosting issues (503, no output), run:
 

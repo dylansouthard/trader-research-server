@@ -51,6 +51,14 @@ function resolvePath(p) {
   return path.isAbsolute(p) ? p : path.resolve(PROJECT_ROOT, p);
 }
 
+function parseBool(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const text = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(text)) return true;
+  if (["0", "false", "no", "off"].includes(text)) return false;
+  return fallback;
+}
+
 function loadConfig(options = {}) {
   const requireUserAgent = Boolean(options.requireUserAgent);
   const loadFeeds = options.loadFeeds !== false;
@@ -67,6 +75,9 @@ function loadConfig(options = {}) {
   const fileLogLevel = fileCfg.log_level ?? fileCfg.LOG_LEVEL;
   const fileLogFile = fileCfg.log_file ?? fileCfg.LOG_FILE ?? fileCfg.ingest_log_path ?? fileCfg.INGEST_LOG_PATH;
   const fileHost = fileCfg.host ?? fileCfg.HOST;
+  const fileSchedulerEnabled = fileCfg.scheduler_enabled ?? fileCfg.SCHEDULER_ENABLED;
+  const fileSchedulerInterval = fileCfg.scheduler_interval_minutes ?? fileCfg.SCHEDULER_INTERVAL_MINUTES;
+  const fileSchedulerRunOnStart = fileCfg.scheduler_run_on_start ?? fileCfg.SCHEDULER_RUN_ON_START;
 
   const cfg = {
     port: clampInt(process.env.PORT || filePort || 8787, 1, 65535),
@@ -78,7 +89,14 @@ function loadConfig(options = {}) {
     maxItemsPerFeed: clampInt(process.env.MAX_ITEMS_PER_FEED || fileMaxItems || 50, 1, 500),
     maxConcurrency: clampInt(process.env.MAX_CONCURRENCY || fileMaxConcurrency || 4, 1, 32),
     logLevel: String(process.env.LOG_LEVEL || fileLogLevel || "info").trim().toLowerCase(),
-    logFile: resolvePath(process.env.LOG_FILE || fileLogFile || "./logs/ingest.log")
+    logFile: resolvePath(process.env.LOG_FILE || fileLogFile || "./logs/ingest.log"),
+    schedulerEnabled: parseBool(process.env.SCHEDULER_ENABLED, parseBool(fileSchedulerEnabled, false)),
+    schedulerIntervalMinutes: clampInt(
+      process.env.SCHEDULER_INTERVAL_MINUTES || fileSchedulerInterval || 15,
+      1,
+      1440
+    ),
+    schedulerRunOnStart: parseBool(process.env.SCHEDULER_RUN_ON_START, parseBool(fileSchedulerRunOnStart, true))
   };
 
   if (requireUserAgent && (!cfg.userAgent || !cfg.userAgent.includes("contact:"))) {

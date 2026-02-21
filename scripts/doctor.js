@@ -65,7 +65,10 @@ function main() {
       port: cfg.port,
       dbPath: cfg.dbPath,
       logFile: cfg.logFile,
-      feedsPath: cfg.feedsPath
+      feedsPath: cfg.feedsPath,
+      schedulerEnabled: cfg.schedulerEnabled,
+      schedulerIntervalMinutes: cfg.schedulerIntervalMinutes,
+      schedulerRunOnStart: cfg.schedulerRunOnStart
     })));
 
     out.checks.push(checkWritable(cfg.logFile));

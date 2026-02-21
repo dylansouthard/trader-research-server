@@ -3,6 +3,7 @@ const { loadConfig } = require("./config");
 const { createDb } = require("./db");
 const { buildRouter } = require("./routes");
 const { createLogger } = require("./logger");
+const { runIngest } = require("./ingest");
 
 async function startServer(options = {}) {
   const bootLog = typeof options.bootLog === "function" ? options.bootLog : () => {};
@@ -57,8 +58,61 @@ async function startServer(options = {}) {
     bootLog(`server.listen.error error=${err?.message || String(err)}`);
   });
 
+  let schedulerTimer = null;
+  let ingestInProgress = false;
+
+  async function runScheduledIngest(trigger) {
+    if (ingestInProgress) {
+      logger.warn("scheduler_skip_overlap", { trigger });
+      return;
+    }
+    ingestInProgress = true;
+    try {
+      logger.info("scheduler_ingest_start", { trigger });
+      const summary = await runIngest();
+      logger.info("scheduler_ingest_done", {
+        trigger,
+        feeds_ok: summary.feeds_ok,
+        feeds_failed: summary.feeds_failed,
+        seen: summary.items_seen,
+        inserted: summary.items_inserted,
+        skipped: summary.items_skipped,
+        duration_ms: summary.duration_ms
+      });
+    } catch (err) {
+      logger.error("scheduler_ingest_error", {
+        trigger,
+        error: err?.stack || err?.message || String(err)
+      });
+    } finally {
+      ingestInProgress = false;
+    }
+  }
+
+  if (cfg.schedulerEnabled) {
+    const intervalMs = cfg.schedulerIntervalMinutes * 60 * 1000;
+    logger.info("scheduler_enabled", {
+      interval_minutes: cfg.schedulerIntervalMinutes,
+      run_on_start: cfg.schedulerRunOnStart
+    });
+    if (cfg.schedulerRunOnStart) {
+      setTimeout(() => {
+        runScheduledIngest("startup");
+      }, 1000);
+    }
+    schedulerTimer = setInterval(() => {
+      runScheduledIngest("interval");
+    }, intervalMs);
+  } else {
+    logger.info("scheduler_disabled");
+  }
+
   function shutdown() {
     logger.info("server_shutdown_requested");
+    if (schedulerTimer) {
+      clearInterval(schedulerTimer);
+      schedulerTimer = null;
+    }
     server.close(async () => {
       await db.close();
       logger.info("server_stopped");
