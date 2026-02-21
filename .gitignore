@@ -3,3 +3,7 @@ node_modules/
 storage/research.sqlite
 logs/ingest.log
 .DS_Store
+tmp
+stderr.log
+.well-known
+.htaccess
