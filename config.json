@@ -1,0 +1,10 @@
+{
+  "port": 8787,
+  "db_path": "./storage/research.sqlite",
+  "feeds_path": "./feeds.json",
+  "request_timeout_ms": 15000,
+  "max_items_per_feed": 50,
+  "max_concurrency": 4,
+  "log_level": "info",
+  "log_file": "./logs/ingest.log"
+}

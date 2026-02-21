@@ -1,0 +1,22 @@
+{
+  "name": "research-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Feed ingestion + read-only docs API backed by SQLite",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "ingest": "node scripts/ingest.js",
+    "migrate": "node scripts/migrate.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "rss-parser": "^3.13.0"
+  }
+}

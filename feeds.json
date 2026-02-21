@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Reuters Business",
+    "url": "http://feeds.reuters.com/reuters/businessNews",
+    "type": "news"
+  },
+  {
+    "name": "Reuters Markets",
+    "url": "http://feeds.reuters.com/news/wealth",
+    "type": "news"
+  },
+  {
+    "name": "Federal Reserve Press Releases",
+    "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "type": "macro"
+  },
+  {
+    "name": "BLS Latest Releases",
+    "url": "https://www.bls.gov/feed/bls_latest.rss",
+    "type": "macro"
+  },
+  {
+    "name": "BEA News Releases",
+    "url": "https://www.bea.gov/news/rss.xml",
+    "type": "macro"
+  },
+  {
+    "name": "US Treasury Press Releases",
+    "url": "https://home.treasury.gov/news/press-releases/feed",
+    "type": "macro"
+  },
+  {
+    "name": "SEC Current Filings (Atom)",
+    "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&output=atom",
+    "type": "filing"
+  },
+  {
+    "name": "EIA Press Releases",
+    "url": "https://www.eia.gov/rss/press_rss.xml",
+    "type": "energy"
+  },
+  {
+    "name": "CNBC Top News",
+    "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    "type": "news"
+  },
+  {
+    "name": "IMF News",
+    "url": "https://www.imf.org/en/News/RSS",
+    "type": "global"
+  }
+]
